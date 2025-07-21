@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}订阅服务 - 智能对话系统{% endblock %}
+
+{% block content %}
+<div class="subscribe-container">
+    <div class="container">
+        <div class="subscribe-header">
+            <h1><i class="fas fa-credit-card"></i> 订阅服务</h1>
+            <p>选择您需要的Token数量，系统将自动计算价格</p>
+        </div>
+
+        <div class="subscribe-content">
+            <!-- 价格方案展示 -->
+            <div class="pricing-section">
+                <h2><i class="fas fa-tags"></i> 当前价格方案</h2>
+                <div class="pricing-grid" id="pricing-display">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>正在加载价格方案...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 订阅表单 -->
+            <div class="subscribe-form">
+                <h2><i class="fas fa-calculator"></i> 计算订阅费用</h2>
+                <form id="subscribeForm">
+                    <div class="form-group">
+                        <label for="tokenAmount">Token数量:</label>
+                        <input type="number" id="tokenAmount" name="tokenAmount" min="1" value="100" required>
+                        <small class="form-text">请输入您需要的Token数量</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pricePerToken">每Token价格:</label>
+                        <input type="text" id="pricePerToken" name="pricePerToken" readonly>
+                        <small class="form-text">价格由管理员设定，用户不可修改</small>
+                    </div>
+                    
+                    <div class="price-calculation">
+                        <div class="calculation-item">
+                            <span>Token数量:</span>
+                            <span id="displayTokenAmount">100</span>
+                        </div>
+                        <div class="calculation-item">
+                            <span>单价:</span>
+                            <span id="displayPricePerToken">¥0.01</span>
+                        </div>
+                        <div class="calculation-item total">
+                            <span>总价:</span>
+                            <span id="displayTotalPrice">¥1.00</span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <i class="fas fa-credit-card"></i>
+                        确认支付
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 支付模态框 -->
+<div id="paymentModal" class="modal">
+    <div class="modal-content payment-modal">
+        <div class="modal-header">
+            <h3><i class="fas fa-qrcode"></i> 微信支付</h3>
+            <span class="close" onclick="closePaymentModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="payment-info">
+                <div class="payment-summary">
+                    <h4>支付详情</h4>
+                    <div class="payment-item">
+                        <span>Token数量:</span>
+                        <span id="modalTokenAmount">100</span>
+                    </div>
+                    <div class="payment-item">
+                        <span>单价:</span>
+                        <span id="modalPricePerToken">¥0.01</span>
+                    </div>
+                    <div class="payment-item total">
+                        <span>总价:</span>
+                        <span id="modalTotalPrice">¥1.00</span>
+                    </div>
+                </div>
+                
+                <div class="payment-qr">
+                    <h4>请使用微信扫描二维码完成支付</h4>
+                    <div class="qr-code">
+                        <img src="/static/images/1911753024729_.pic.jpg" alt="微信支付二维码" class="payment-qr-image">
+                        <p class="qr-note">推荐使用微信支付</p>
+                    </div>
+                    <div class="payment-instructions">
+                        <p><i class="fas fa-info-circle"></i> 支付说明：</p>
+                        <ul>
+                            <li>请使用微信扫描上方二维码</li>
+                            <li>支付完成后请点击"已完成支付"按钮</li>
+                            <li>系统将记录您的支付信息</li>
+                            <li>请联系管理员为您充值Token</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">
+                <i class="fas fa-times"></i>
+                取消支付
+            </button>
+            <button type="button" class="btn btn-success" onclick="completePayment()">
+                <i class="fas fa-check"></i>
+                已完成支付
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPrices = [];
+let selectedPrice = null;
+
+// 页面加载时获取价格方案
+document.addEventListener('DOMContentLoaded', function() {
+    loadPricingData();
+    setupFormListeners();
+});
+
+// 加载价格数据
+function loadPricingData() {
+    fetch('/api/token-price')
+        .then(response => response.json())
+        .then(priceData => {
+            // 设置Token价格
+            const pricePerToken = priceData.price / priceData.token_amount;
+            document.getElementById('pricePerToken').value = pricePerToken.toFixed(4);
+            
+            // 显示价格信息
+            displayTokenPrice(priceData);
+            updateCalculation();
+        })
+        .catch(error => {
+            console.error('加载Token价格失败:', error);
+            // 使用默认价格
+            document.getElementById('pricePerToken').value = '0.0100';
+            displayDefaultPricing();
+        });
+}
+
+// 显示Token价格信息
+function displayTokenPrice(priceData) {
+    const pricingDisplay = document.getElementById('pricing-display');
+    
+    const pricePerToken = (priceData.price / priceData.token_amount).toFixed(4);
+    
+    pricingDisplay.innerHTML = `
+        <div class="pricing-card featured">
+            <div class="pricing-header">
+                <h3>当前Token价格</h3>
+                <div class="price">¥${pricePerToken}/Token</div>
+            </div>
+            <div class="pricing-features">
+                <div class="feature">
+                    <i class="fas fa-check"></i>
+                    <span>${priceData.token_amount} Token = ¥${priceData.price}</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-check"></i>
+                    <span>单价: ¥${pricePerToken}/Token</span>
+                </div>
+                ${priceData.description ? `
+                <div class="feature">
+                    <i class="fas fa-check"></i>
+                    <span>${priceData.description}</span>
+                </div>
+                ` : ''}
+                <div class="feature">
+                    <i class="fas fa-check"></i>
+                    <span>状态: ${priceData.is_active ? '启用' : '禁用'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// 显示默认价格
+function displayDefaultPricing() {
+    const pricingDisplay = document.getElementById('pricing-display');
+    pricingDisplay.innerHTML = `
+        <div class="pricing-card featured">
+            <div class="pricing-header">
+                <h3>默认Token价格</h3>
+                <div class="price">¥0.0100/Token</div>
+            </div>
+            <div class="pricing-features">
+                <div class="feature">
+                    <i class="fas fa-check"></i>
+                    <span>1 Token = ¥0.01</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-check"></i>
+                    <span>单价: ¥0.0100/Token</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-check"></i>
+                    <span>默认价格设置</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// 设置表单监听器
+function setupFormListeners() {
+    const tokenInput = document.getElementById('tokenAmount');
+    
+    tokenInput.addEventListener('input', updateCalculation);
+}
+
+// 更新计算
+function updateCalculation() {
+    const tokenAmount = parseInt(document.getElementById('tokenAmount').value) || 0;
+    const pricePerToken = parseFloat(document.getElementById('pricePerToken').value) || 0;
+    const totalPrice = tokenAmount * pricePerToken;
+    
+    document.getElementById('displayTokenAmount').textContent = tokenAmount;
+    document.getElementById('displayPricePerToken').textContent = `¥${pricePerToken.toFixed(4)}`;
+    document.getElementById('displayTotalPrice').textContent = `¥${totalPrice.toFixed(2)}`;
+}
+
+// 提交订阅表单
+document.getElementById('subscribeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const tokenAmount = parseInt(document.getElementById('tokenAmount').value);
+    const pricePerToken = parseFloat(document.getElementById('pricePerToken').value);
+    const totalPrice = tokenAmount * pricePerToken;
+    
+    if (tokenAmount <= 0) {
+        alert('请输入有效的Token数量');
+        return;
+    }
+    
+    if (pricePerToken <= 0) {
+        alert('请输入有效的价格');
+        return;
+    }
+    
+    // 显示支付模态框
+    showPaymentModal(tokenAmount, pricePerToken, totalPrice);
+});
+
+// 显示支付模态框
+function showPaymentModal(tokenAmount, pricePerToken, totalPrice) {
+    document.getElementById('modalTokenAmount').textContent = tokenAmount;
+    document.getElementById('modalPricePerToken').textContent = `¥${pricePerToken.toFixed(4)}`;
+    document.getElementById('modalTotalPrice').textContent = `¥${totalPrice.toFixed(2)}`;
+    
+    document.getElementById('paymentModal').style.display = 'block';
+}
+
+// 关闭支付模态框
+function closePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+}
+
+// 完成支付
+function completePayment() {
+    const tokenAmount = parseInt(document.getElementById('tokenAmount').value);
+    const pricePerToken = parseFloat(document.getElementById('pricePerToken').value);
+    const totalPrice = tokenAmount * pricePerToken;
+    
+    // 创建支付记录
+    fetch('/api/payment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            token_amount: tokenAmount,
+            price_per_token: pricePerToken,
+            total_price: totalPrice
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 完成支付
+            return fetch(`/api/payment/${data.payment_id}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+        } else {
+            throw new Error(data.message);
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 显示成功消息
+            alert(`支付成功！\nToken数量: ${tokenAmount}\n总价: ¥${totalPrice.toFixed(2)}\n\n请联系管理员为您充值Token。`);
+            
+            // 关闭模态框
+            closePaymentModal();
+            
+            // 重置表单
+            document.getElementById('subscribeForm').reset();
+            updateCalculation();
+        } else {
+            throw new Error(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('支付失败:', error);
+        alert(`支付失败: ${error.message}`);
+    });
+}
+
+// 记录支付日志
+function logPayment(tokenAmount, pricePerToken, totalPrice) {
+    const paymentData = {
+        token_amount: tokenAmount,
+        price_per_token: pricePerToken,
+        total_price: totalPrice,
+        user_id: '{{ current_user.id if current_user.is_authenticated else "anonymous" }}',
+        timestamp: new Date().toISOString()
+    };
+    
+    // 发送到后端API记录支付信息
+    fetch('/api/payment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('支付记录已保存:', data);
+        } else {
+            console.error('保存支付记录失败:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('保存支付记录异常:', error);
+    });
+}
+
+// 点击模态框外部关闭
+window.onclick = function(event) {
+    const modal = document.getElementById('paymentModal');
+    if (event.target === modal) {
+        closePaymentModal();
+    }
+}
+</script>
+{% endblock %} 

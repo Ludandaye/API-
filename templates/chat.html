@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+
+{% block title %}{{ conversation.title }} - 智能对话系统{% endblock %}
+
+{% block content %}
+<div class="chat-layout">
+    <!-- 侧边栏 -->
+    <div class="chat-sidebar" id="chatSidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-cog"></i> 对话设置</h3>
+            <button id="toggleSidebar" class="sidebar-toggle">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- System信息设置 -->
+            <div class="setting-group">
+                <h4><i class="fas fa-robot"></i> System信息</h4>
+                <div class="form-group">
+                    <textarea id="systemMessage" placeholder="设置AI的系统角色信息..." rows="4">你是一个有用的AI助手，可以帮助用户解答问题。</textarea>
+                </div>
+            </div>
+            
+            <!-- Temperature设置 -->
+            <div class="setting-group">
+                <h4><i class="fas fa-thermometer-half"></i> Temperature</h4>
+                <div class="form-group">
+                    <div class="slider-container">
+                        <input type="range" id="temperatureSlider" min="0" max="2" step="0.1" value="0.7">
+                        <div class="slider-value">
+                            <span id="temperatureValue">0.7</span>
+                        </div>
+                    </div>
+                    <small class="form-text">控制回答的创造性，0=保守，2=非常创造性</small>
+                </div>
+            </div>
+            
+            <!-- Token设置 -->
+            <div class="setting-group">
+                <h4><i class="fas fa-coins"></i> Token设置</h4>
+                <div class="form-group">
+                    <label for="maxTokens">最大Token数</label>
+                    <input type="number" id="maxTokens" value="1000" min="100" max="4000">
+                </div>
+                <div class="form-group">
+                    <label for="tokenUsage">已用Token</label>
+                    <div class="token-usage">
+                        <span id="usedTokens">0</span> / <span id="availableTokens">{{ current_user.tokens }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 模型选择 -->
+            <div class="setting-group">
+                <h4><i class="fas fa-brain"></i> 模型选择</h4>
+                <div class="form-group">
+                    <select id="modelSelect">
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 对话信息 -->
+            <div class="setting-group">
+                <h4><i class="fas fa-info-circle"></i> 对话信息</h4>
+                <div class="conversation-info">
+                    <p><strong>标题:</strong> {{ conversation.title }}</p>
+                    <p><strong>创建时间:</strong> {{ conversation.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>消息数量:</strong> <span id="messageCount">{{ messages|length }}</span></p>
+                </div>
+            </div>
+            
+            <!-- 快捷操作 -->
+            <div class="setting-group">
+                <h4><i class="fas fa-magic"></i> 快捷操作</h4>
+                <div class="quick-actions">
+                    <button id="clearChat" class="btn btn-sm btn-warning">
+                        <i class="fas fa-trash"></i> 清空对话
+                    </button>
+                    <button id="exportChat" class="btn btn-sm btn-info">
+                        <i class="fas fa-download"></i> 导出对话
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主对话区域 -->
+    <div class="chat-main">
+        <div class="chat-header">
+            <div class="chat-title">
+                <button id="sidebarToggleBtn" class="sidebar-toggle-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1><i class="fas fa-comments"></i> {{ conversation.title }}</h1>
+                <p class="chat-meta">
+                    创建于 {{ conversation.created_at.strftime('%Y-%m-%d %H:%M') }}
+                </p>
+            </div>
+            <div class="chat-actions">
+                <button id="uploadImageBtn" class="btn btn-secondary">
+                    <i class="fas fa-image"></i> 上传图片
+                </button>
+                <button id="uploadFileBtn" class="btn btn-secondary">
+                    <i class="fas fa-file-upload"></i> 上传文件
+                </button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> 返回控制台
+                </a>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            {% for message in messages %}
+                <div class="message {{ message.role }}">
+                    <div class="message-avatar">
+                        {% if message.role == 'user' %}
+                            <i class="fas fa-user"></i>
+                        {% else %}
+                            <i class="fas fa-robot"></i>
+                        {% endif %}
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">{{ message.content }}</div>
+                        {% if message.image_url %}
+                            <div class="message-image">
+                                <img src="{{ url_for('static', filename='uploads/' + message.image_url) }}" alt="上传的图片">
+                            </div>
+                        {% endif %}
+                        {% if message.file_url %}
+                            <div class="message-file">
+                                <i class="fas fa-file"></i>
+                                <span>{{ message.file_url }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="message-time">
+                            {{ message.timestamp.strftime('%H:%M') }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <div class="input-actions">
+                    <button id="imageInputBtn" class="input-action-btn" title="上传图片">
+                        <i class="fas fa-image"></i>
+                    </button>
+                    <button id="fileInputBtn" class="input-action-btn" title="上传文件">
+                        <i class="fas fa-file-upload"></i>
+                    </button>
+                </div>
+                <div class="input-container">
+                    <textarea id="messageInput" placeholder="输入您的消息..." rows="3"></textarea>
+                    <button id="sendMessageBtn" class="send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="input-preview" id="inputPreview" style="display: none;">
+                <div class="preview-content">
+                    <div class="preview-image" id="previewImage"></div>
+                    <div class="preview-file" id="previewFile"></div>
+                    <button id="clearPreview" class="clear-preview">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 图片上传模态框 -->
+<div id="imageModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-image"></i> 上传图片</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="imageInput">选择图片</label>
+                <input type="file" id="imageInput" accept="image/*">
+            </div>
+            <div id="imagePreview" class="image-preview"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelImage">取消</button>
+            <button class="btn btn-primary" id="confirmImage">确认</button>
+        </div>
+    </div>
+</div>
+
+<!-- 文件上传模态框 -->
+<div id="fileModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-file-upload"></i> 上传文件</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="fileInput">选择文件</label>
+                <input type="file" id="fileInput" accept=".txt,.pdf,.doc,.docx">
+            </div>
+            <div id="filePreview" class="file-preview"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelFile">取消</button>
+            <button class="btn btn-primary" id="confirmFile">确认</button>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="hiddenImageInput" accept="image/*" style="display: none;">
+<input type="file" id="hiddenFileInput" accept=".txt,.pdf,.doc,.docx" style="display: none;">
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentImageData = null;
+let currentFileData = null;
+let currentFileName = null;
+let usedTokens = 0;
+
+// 侧边栏控制
+function toggleSidebar() {
+    const sidebar = document.getElementById('chatSidebar');
+    const main = document.querySelector('.chat-main');
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    
+    if (sidebar.classList.contains('collapsed')) {
+        sidebar.classList.remove('collapsed');
+        main.classList.remove('expanded');
+        toggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+    } else {
+        sidebar.classList.add('collapsed');
+        main.classList.add('expanded');
+        toggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+    }
+}
+
+// 绑定侧边栏切换事件
+document.getElementById('sidebarToggleBtn').addEventListener('click', toggleSidebar);
+document.getElementById('toggleSidebar').addEventListener('click', toggleSidebar);
+
+// Temperature滑块控制
+document.getElementById('temperatureSlider').addEventListener('input', function() {
+    document.getElementById('temperatureValue').textContent = this.value;
+});
+
+// 模态框功能
+function openModal(modalId) {
+    document.getElementById(modalId).style.display = 'block';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// 关闭模态框
+document.querySelectorAll('.close').forEach(closeBtn => {
+    closeBtn.addEventListener('click', function() {
+        this.closest('.modal').style.display = 'none';
+    });
+});
+
+// 点击模态框外部关闭
+window.addEventListener('click', function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+});
+
+// 发送消息
+document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
+document.getElementById('messageInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+function sendMessage() {
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value.trim();
+    
+    if (!message && !currentImageData && !currentFileData) {
+        return;
+    }
+    
+    const sendBtn = document.getElementById('sendMessageBtn');
+    const originalText = sendBtn.innerHTML;
+    sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    sendBtn.disabled = true;
+    
+    // 获取侧边栏设置
+    const systemMessage = document.getElementById('systemMessage').value;
+    const temperature = parseFloat(document.getElementById('temperatureSlider').value);
+    const maxTokens = parseInt(document.getElementById('maxTokens').value);
+    const model = document.getElementById('modelSelect').value;
+    
+    const data = {
+        message: message,
+        image: currentImageData,
+        file: currentFileData,
+        system_message: systemMessage,
+        temperature: temperature,
+        max_tokens: maxTokens,
+        model: model
+    };
+    
+    fetch(`/api/conversations/{{ conversation.id }}/messages`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 添加用户消息
+            addMessage('user', message, currentImageData, currentFileData, currentFileName);
+            
+            // 添加助手回复
+            addMessage('assistant', data.assistant_message);
+            
+            // 更新token使用量
+            if (data.tokens_used) {
+                usedTokens += data.tokens_used;
+                document.getElementById('usedTokens').textContent = usedTokens;
+            }
+            
+            // 更新消息数量
+            const messageCount = parseInt(document.getElementById('messageCount').textContent) + 2;
+            document.getElementById('messageCount').textContent = messageCount;
+            
+            // 清空输入
+            messageInput.value = '';
+            clearPreview();
+            
+            // 滚动到底部
+            scrollToBottom();
+        } else {
+            alert('发送消息失败');
+        }
+    })
+    .catch(error => {
+        alert('网络错误');
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        sendBtn.innerHTML = originalText;
+        sendBtn.disabled = false;
+    });
+}
+
+function addMessage(role, content, imageData = null, fileData = null, fileName = null) {
+    const messagesContainer = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${role}`;
+    
+    const avatar = role === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+    const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    
+    let contentHtml = `<div class="message-text">${content}</div>`;
+    
+    if (imageData) {
+        contentHtml += `<div class="message-image"><img src="${imageData}" alt="上传的图片"></div>`;
+    }
+    
+    if (fileData && fileName) {
+        contentHtml += `<div class="message-file"><i class="fas fa-file"></i><span>${fileName}</span></div>`;
+    }
+    
+    messageDiv.innerHTML = `
+        <div class="message-avatar">${avatar}</div>
+        <div class="message-content">
+            ${contentHtml}
+            <div class="message-time">${time}</div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+}
+
+function scrollToBottom() {
+    const messagesContainer = document.getElementById('chatMessages');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// 图片上传
+document.getElementById('imageInputBtn').addEventListener('click', () => {
+    document.getElementById('hiddenImageInput').click();
+});
+
+document.getElementById('hiddenImageInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentImageData = e.target.result;
+            showImagePreview(currentImageData);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+function showImagePreview(imageData) {
+    const previewDiv = document.getElementById('inputPreview');
+    const previewImage = document.getElementById('previewImage');
+    
+    previewImage.innerHTML = `<img src="${imageData}" alt="预览图片">`;
+    previewDiv.style.display = 'block';
+}
+
+// 文件上传
+document.getElementById('fileInputBtn').addEventListener('click', () => {
+    document.getElementById('hiddenFileInput').click();
+});
+
+document.getElementById('hiddenFileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentFileData = e.target.result;
+            currentFileName = file.name;
+            showFilePreview(file.name);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+function showFilePreview(fileName) {
+    const previewDiv = document.getElementById('inputPreview');
+    const previewFile = document.getElementById('previewFile');
+    
+    previewFile.innerHTML = `<i class="fas fa-file"></i><span>${fileName}</span>`;
+    previewDiv.style.display = 'block';
+}
+
+// 清除预览
+document.getElementById('clearPreview').addEventListener('click', clearPreview);
+
+function clearPreview() {
+    currentImageData = null;
+    currentFileData = null;
+    currentFileName = null;
+    
+    document.getElementById('inputPreview').style.display = 'none';
+    document.getElementById('previewImage').innerHTML = '';
+    document.getElementById('previewFile').innerHTML = '';
+    
+    // 清空隐藏的input
+    document.getElementById('hiddenImageInput').value = '';
+    document.getElementById('hiddenFileInput').value = '';
+}
+
+// 快捷操作
+document.getElementById('clearChat').addEventListener('click', function() {
+    if (confirm('确定要清空当前对话吗？')) {
+        fetch(`/api/conversations/{{ conversation.id }}/clear`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('chatMessages').innerHTML = '';
+                document.getElementById('messageCount').textContent = '0';
+                usedTokens = 0;
+                document.getElementById('usedTokens').textContent = '0';
+            } else {
+                alert('清空对话失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('清空对话失败');
+        });
+    }
+});
+
+document.getElementById('exportChat').addEventListener('click', function() {
+    fetch(`/api/conversations/{{ conversation.id }}/export`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `对话_${new Date().toISOString().slice(0, 10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('导出对话失败');
+    });
+});
+
+// 页面加载完成后滚动到底部
+window.addEventListener('load', scrollToBottom);
+</script>
+{% endblock %} 

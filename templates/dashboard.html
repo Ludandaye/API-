@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+
+{% block title %}控制台 - GPT随心用{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>
+            <i class="fas fa-tachometer-alt"></i>
+            用户控制台
+        </h1>
+        <p>欢迎回来，{{ current_user.username }}！这里是您的GPT随心用控制台</p>
+    </div>
+
+    <!-- 公告区域 -->
+    {% if announcements %}
+    <div class="announcements-section">
+        <div class="section-header">
+            <h2>
+                <i class="fas fa-bullhorn"></i>
+                最新公告
+            </h2>
+        </div>
+        <div class="announcements">
+            {% for announcement in announcements %}
+            <div class="announcement-card">
+                <div class="announcement-header">
+                    <h3>{{ announcement.title }}</h3>
+                    <span class="announcement-date">{{ announcement.created_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+                <div class="announcement-content">
+                    {{ announcement.content }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 统计卡片 -->
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Token余额</h3>
+                <div class="stat-value">{{ current_user.tokens }}</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <div class="stat-content">
+                <h3>对话数量</h3>
+                <div class="stat-value">{{ conversations|length }}</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-file-upload"></i>
+            </div>
+            <div class="stat-content">
+                <h3>上传文件</h3>
+                <div class="stat-value">{{ files|length }}</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div class="stat-content">
+                <h3>批量任务</h3>
+                <div class="stat-value">{{ tasks|length }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-content">
+        <!-- 最近对话 -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-comments"></i>
+                    最近对话
+                </h2>
+                <button class="btn btn-primary" onclick="createNewConversation()">
+                    <i class="fas fa-plus"></i>
+                    新建对话
+                </button>
+            </div>
+            
+            <div class="conversations-list">
+                {% if conversations %}
+                    {% for conversation in conversations %}
+                    <div class="conversation-item">
+                        <div class="conversation-info">
+                            <h3>{{ conversation.title }}</h3>
+                            <p>消息数: {{ conversation.total_messages }} | Token使用: {{ conversation.total_tokens_used }}</p>
+                        </div>
+                        <div class="conversation-actions">
+                            <a href="{{ url_for('chat', conversation_id=conversation.id) }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-comment"></i>
+                                继续对话
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-comments"></i>
+                        <p>还没有对话记录</p>
+                        <button class="btn btn-primary" onclick="createNewConversation()">
+                            <i class="fas fa-plus"></i>
+                            开始第一个对话
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 最近文件 -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-file-upload"></i>
+                    最近文件
+                </h2>
+            </div>
+            
+            <div class="files-list">
+                {% if files %}
+                    {% for file in files %}
+                    <div class="file-item">
+                        <div class="file-info">
+                            <h3>{{ file.original_filename }}</h3>
+                            <p>大小: {{ (file.file_size / 1024)|round(1) }} KB | 上传时间: {{ file.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="downloadFile('{{ file.filename }}')">
+                                <i class="fas fa-download"></i>
+                                下载
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-file-upload"></i>
+                        <p>还没有上传文件</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 批量任务 -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-tasks"></i>
+                    批量任务
+                </h2>
+                <button class="btn btn-primary" onclick="showBatchModal()">
+                    <i class="fas fa-plus"></i>
+                    新建任务
+                </button>
+            </div>
+            
+            <div class="tasks-list">
+                {% if tasks %}
+                    {% for task in tasks %}
+                    <div class="task-item">
+                        <div class="task-info">
+                            <h3>{{ task.task_name }}</h3>
+                            <p>状态: {{ task.status }} | 创建时间: {{ task.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                        <div class="task-actions">
+                            {% if task.status == 'completed' %}
+                            <button class="btn btn-success btn-sm" onclick="showAnalysisResult({{ task.id }})">
+                                <i class="fas fa-eye"></i>
+                                查看结果
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="downloadAnalysisResult({{ task.id }})">
+                                <i class="fas fa-download"></i>
+                                下载
+                            </button>
+                            {% else %}
+                            <span class="status-badge status-{{ task.status }}">{{ task.status }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-tasks"></i>
+                        <p>还没有批量任务</p>
+                        <button class="btn btn-primary" onclick="showBatchModal()">
+                            <i class="fas fa-plus"></i>
+                            创建第一个任务
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新建对话模态框 -->
+<div id="newConversationModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-plus"></i>
+                新建对话
+            </h3>
+            <span class="close" onclick="closeNewConversationModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="conversationTitle">对话标题</label>
+                <input type="text" id="conversationTitle" placeholder="请输入对话标题">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeNewConversationModal()">
+                <i class="fas fa-times"></i>
+                取消
+            </button>
+            <button type="button" class="btn btn-primary" onclick="createConversation()">
+                <i class="fas fa-check"></i>
+                创建
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 批量任务模态框 -->
+<div id="batchModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-tasks"></i>
+                批量JSON处理
+            </h3>
+            <span class="close" onclick="closeBatchModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="taskName">任务名称</label>
+                <input type="text" id="taskName" placeholder="请输入任务名称">
+            </div>
+            <div class="form-group">
+                <label for="jsonData">JSON数据</label>
+                <textarea id="jsonData" rows="10" placeholder="请输入要分析的JSON数据"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeBatchModal()">
+                <i class="fas fa-times"></i>
+                取消
+            </button>
+            <button type="button" class="btn btn-primary" onclick="createBatchTask()">
+                <i class="fas fa-play"></i>
+                开始分析
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 分析结果模态框 -->
+<div id="resultModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-chart-bar"></i>
+                分析结果
+            </h3>
+            <span class="close" onclick="closeResultModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="resultContent"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeResultModal()">
+                <i class="fas fa-times"></i>
+                关闭
+            </button>
+            <button type="button" class="btn btn-success" id="downloadResultBtn" style="display: none;">
+                <i class="fas fa-download"></i>
+                下载结果
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 新建对话
+function createNewConversationModal() {
+    document.getElementById('newConversationModal').style.display = 'block';
+}
+
+function closeNewConversationModal() {
+    document.getElementById('newConversationModal').style.display = 'none';
+}
+
+function createConversation() {
+    const title = document.getElementById('conversationTitle').value;
+    if (!title) {
+        alert('请输入对话标题');
+        return;
+    }
+    
+    fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: title })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = `/chat/${data.conversation_id}`;
+        } else {
+            alert(data.message || '创建对话失败');
+        }
+    })
+    .catch(error => {
+        console.error('创建对话失败:', error);
+        alert('创建对话失败，请重试');
+    });
+}
+
+// 批量任务
+function showBatchModal() {
+    document.getElementById('batchModal').style.display = 'block';
+}
+
+function closeBatchModal() {
+    document.getElementById('batchModal').style.display = 'none';
+}
+
+function createBatchTask() {
+    const taskName = document.getElementById('taskName').value;
+    const jsonData = document.getElementById('jsonData').value;
+    
+    if (!taskName || !jsonData) {
+        alert('请填写任务名称和JSON数据');
+        return;
+    }
+    
+    try {
+        JSON.parse(jsonData);
+    } catch (e) {
+        alert('JSON格式不正确');
+        return;
+    }
+    
+    fetch('/api/batch', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: 'json_processing',
+            name: taskName,
+            data: jsonData
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('任务创建成功！');
+            closeBatchModal();
+            location.reload();
+        } else {
+            alert(data.message || '创建任务失败');
+        }
+    })
+    .catch(error => {
+        console.error('创建任务失败:', error);
+        alert('创建任务失败，请重试');
+    });
+}
+
+// 显示分析结果
+function showAnalysisResult(taskId) {
+    fetch(`/api/batch/${taskId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const resultContent = document.getElementById('resultContent');
+                resultContent.innerHTML = `
+                    <h4>分析结果</h4>
+                    <pre>${JSON.stringify(data.result, null, 2)}</pre>
+                `;
+                
+                const downloadBtn = document.getElementById('downloadResultBtn');
+                downloadBtn.style.display = 'inline-block';
+                downloadBtn.onclick = () => downloadAnalysisResult(taskId);
+                
+                document.getElementById('resultModal').style.display = 'block';
+            } else {
+                alert(data.message || '获取结果失败');
+            }
+        })
+        .catch(error => {
+            console.error('获取结果失败:', error);
+            alert('获取结果失败，请重试');
+        });
+}
+
+// 下载分析结果
+function downloadAnalysisResult(taskId) {
+    fetch(`/api/batch/${taskId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const result = data.result;
+                const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `analysis_result_${taskId}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                alert(data.message || '下载失败');
+            }
+        })
+        .catch(error => {
+            console.error('下载失败:', error);
+            alert('下载失败，请重试');
+        });
+}
+
+function closeResultModal() {
+    document.getElementById('resultModal').style.display = 'none';
+}
+
+// 下载文件
+function downloadFile(filename) {
+    const link = document.createElement('a');
+    link.href = `/uploads/${filename}`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// 点击模态框外部关闭
+window.onclick = function(event) {
+    const modals = ['newConversationModal', 'batchModal', 'resultModal'];
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %} 

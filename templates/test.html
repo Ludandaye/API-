@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试页面</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>测试页面</h1>
+    <p>如果您能看到这个页面，说明Python应用正常运行。</p>
+    
+    <h2>登录测试</h2>
+    <form id="loginForm">
+        用户名: <input type="text" id="username" value="admin"><br>
+        密码: <input type="password" id="password" value="admin123"><br>
+        <button type="submit">登录</button>
+    </form>
+    
+    <div id="result"></div>
+
+    <script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const data = {
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        };
+        
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            console.log('响应状态:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('响应数据:', data);
+            document.getElementById('result').innerHTML = 
+                '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        })
+        .catch(error => {
+            console.error('错误:', error);
+            document.getElementById('result').innerHTML = '错误: ' + error.message;
+        });
+    });
+    </script>
+</body>
+</html> 

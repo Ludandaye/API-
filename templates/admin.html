@@ -1,0 +1,1333 @@
+{% extends "base.html" %}
+
+{% block title %}管理面板 - 智能对话系统{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1><i class="fas fa-cog"></i> 管理面板</h1>
+        <p>系统管理和配置</p>
+    </div>
+    
+    <div class="admin-tabs">
+        <button class="tab-btn active" data-tab="overview">
+            <i class="fas fa-chart-bar"></i> 概览
+        </button>
+        <button class="tab-btn" data-tab="users">
+            <i class="fas fa-users"></i> 用户管理
+        </button>
+        <button class="tab-btn" data-tab="config">
+            <i class="fas fa-cogs"></i> 系统配置
+        </button>
+        <button class="tab-btn" data-tab="announcements">
+            <i class="fas fa-bullhorn"></i> 公告管理
+        </button>
+        <button class="tab-btn" data-tab="prices">
+            <i class="fas fa-tags"></i> 价格管理
+        </button>
+        <button class="tab-btn" data-tab="token-price">
+            <i class="fas fa-coins"></i> Token价格
+        </button>
+    </div>
+    
+    <div class="admin-content">
+        <!-- 概览面板 -->
+        <div id="overview" class="tab-content active">
+            <div class="overview-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>总用户数</h3>
+                        <p class="stat-value" id="totalUsers">-</p>
+                        <p class="stat-detail" id="userDetails">活跃: - | 管理员: -</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>总对话数</h3>
+                        <p class="stat-value" id="totalConversations">-</p>
+                        <p class="stat-detail" id="conversationDetails">本周新增: -</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>总消息数</h3>
+                        <p class="stat-value" id="totalMessages">-</p>
+                        <p class="stat-detail" id="messageDetails">用户: - | AI: -</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-upload"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>总文件数</h3>
+                        <p class="stat-value" id="totalFiles">-</p>
+                        <p class="stat-detail" id="fileDetails">本周上传: -</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Token统计</h3>
+                        <p class="stat-value" id="totalTokens">-</p>
+                        <p class="stat-detail" id="tokenDetails">已用: - | 可用: -</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>批量任务</h3>
+                        <p class="stat-value" id="totalTasks">-</p>
+                        <p class="stat-detail" id="taskDetails">已完成: - | 待处理: -</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overview-charts">
+                <div class="chart-container">
+                    <h3><i class="fas fa-chart-line"></i> 用户注册趋势</h3>
+                    <div class="chart" id="userChart">
+                        <div class="chart-placeholder">加载中...</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3><i class="fas fa-chart-bar"></i> 消息发送趋势</h3>
+                    <div class="chart" id="messageChart">
+                        <div class="chart-placeholder">加载中...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="recent-activity">
+                <h3><i class="fas fa-clock"></i> 最近活动</h3>
+                <div class="activity-list" id="recentActivity">
+                    <!-- 动态加载 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 用户管理面板 -->
+        <div id="users" class="tab-content">
+            <div class="section-header">
+                <h3><i class="fas fa-users"></i> 用户列表</h3>
+                <button id="refreshUsers" class="btn btn-secondary">
+                    <i class="fas fa-refresh"></i> 刷新
+                </button>
+            </div>
+            
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>邮箱</th>
+                            <th>Token余额</th>
+                            <th>注册时间</th>
+                            <th>最后登录</th>
+                            <th>状态</th>
+                            <th>管理员</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- 动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 系统配置面板 -->
+        <div id="config" class="tab-content">
+            <div class="section-header">
+                <h3><i class="fas fa-cogs"></i> 系统配置</h3>
+                <button id="saveConfig" class="btn btn-primary">
+                    <i class="fas fa-save"></i> 保存配置
+                </button>
+            </div>
+            
+            <div class="config-form">
+                <div class="form-group">
+                    <label for="openaiApiKey">
+                        <i class="fas fa-key"></i> OpenAI API Key
+                    </label>
+                    <input type="password" id="openaiApiKey" placeholder="输入OpenAI API Key">
+                    <button type="button" class="btn btn-sm btn-secondary" id="toggleApiKey">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="defaultTokens">
+                        <i class="fas fa-coins"></i> 新用户默认Token
+                    </label>
+                    <input type="number" id="defaultTokens" value="100" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="maxFileSize">
+                        <i class="fas fa-file"></i> 最大文件大小 (MB)
+                    </label>
+                    <input type="number" id="maxFileSize" value="16" min="1" max="100">
+                </div>
+                
+                <div class="form-group">
+                    <label for="systemMessage">
+                        <i class="fas fa-comment"></i> 默认系统消息
+                    </label>
+                    <textarea id="systemMessage" rows="4" placeholder="输入默认的系统消息">你是一个有用的AI助手。</textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 公告管理面板 -->
+        <div id="announcements" class="tab-content">
+            <div class="section-header">
+                <h3><i class="fas fa-bullhorn"></i> 公告管理</h3>
+                <button id="newAnnouncement" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 新建公告
+                </button>
+            </div>
+            
+            <div class="announcements-list" id="announcementsList">
+                <!-- 动态加载 -->
+            </div>
+        </div>
+
+        <!-- 价格管理面板 -->
+        <div id="prices" class="tab-content">
+            <div class="section-header">
+                <h3><i class="fas fa-tags"></i> 价格管理</h3>
+                <button id="newPrice" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 新增价格
+                </button>
+            </div>
+            
+            <div class="prices-list" id="pricesList">
+                <!-- 动态加载 -->
+            </div>
+        </div>
+
+        <!-- Token价格管理面板 -->
+        <div id="token-price" class="tab-content">
+            <div class="section-header">
+                <h3><i class="fas fa-coins"></i> Token价格管理</h3>
+                <button id="newTokenPrice" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 设置Token价格
+                </button>
+            </div>
+            
+            <div class="token-price-display" id="tokenPriceDisplay">
+                <!-- 动态加载 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新建公告模态框 -->
+<div id="announcementModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus"></i> 新建公告</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="announcementTitle">公告标题</label>
+                <input type="text" id="announcementTitle" placeholder="输入公告标题">
+            </div>
+            <div class="form-group">
+                <label for="announcementContent">公告内容</label>
+                <textarea id="announcementContent" rows="6" placeholder="输入公告内容"></textarea>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="announcementActive" checked>
+                    立即发布
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelAnnouncement">取消</button>
+            <button class="btn btn-primary" id="saveAnnouncement">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 用户编辑模态框 -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-edit"></i> 编辑用户</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="editUsername">用户名</label>
+                <input type="text" id="editUsername" readonly>
+            </div>
+            <div class="form-group">
+                <label for="editEmail">邮箱</label>
+                <input type="email" id="editEmail">
+            </div>
+            <div class="form-group">
+                <label for="editTokens">Token余额</label>
+                <input type="number" id="editTokens" min="0">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="editIsAdmin">
+                    管理员权限
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelUserEdit">取消</button>
+            <button class="btn btn-primary" id="saveUserEdit">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 价格管理模态框 -->
+<div id="priceModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus"></i> 新增价格</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="tokenAmount">Token数量</label>
+                <input type="number" id="tokenAmount" placeholder="输入Token数量" min="1">
+            </div>
+            <div class="form-group">
+                <label for="priceValue">价格 (元)</label>
+                <input type="number" id="priceValue" placeholder="输入价格" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label for="priceDescription">描述</label>
+                <textarea id="priceDescription" rows="3" placeholder="输入价格方案描述"></textarea>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="priceActive" checked>
+                    启用此价格方案
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelPrice">取消</button>
+            <button class="btn btn-primary" id="savePrice">保存</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 标签页切换
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const tabId = this.dataset.tab;
+        
+        // 更新按钮状态
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        // 更新内容显示
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.getElementById(tabId).classList.add('active');
+        
+        // 加载对应数据
+        loadTabData(tabId);
+    });
+});
+
+// 模态框功能
+function openModal(modalId) {
+    document.getElementById(modalId).style.display = 'block';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+document.querySelectorAll('.close').forEach(closeBtn => {
+    closeBtn.addEventListener('click', function() {
+        this.closest('.modal').style.display = 'none';
+    });
+});
+
+window.addEventListener('click', function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+});
+
+// 加载标签页数据
+function loadTabData(tabId) {
+    switch(tabId) {
+        case 'overview':
+            loadOverviewData();
+            break;
+        case 'users':
+            loadUsersData();
+            break;
+        case 'config':
+            loadConfigData();
+            break;
+        case 'announcements':
+            loadAnnouncementsData();
+            break;
+        case 'prices':
+            loadPricesData();
+            break;
+        case 'token-price':
+            loadTokenPricesData();
+            break;
+    }
+}
+
+// 加载概览数据
+function loadOverviewData() {
+    fetch('/api/admin/stats')
+        .then(response => response.json())
+        .then(stats => {
+            // 更新用户统计
+            document.getElementById('totalUsers').textContent = stats.users.total;
+            document.getElementById('userDetails').textContent = 
+                `活跃: ${stats.users.active} | 管理员: ${stats.users.admin}`;
+            
+            // 更新对话统计
+            document.getElementById('totalConversations').textContent = stats.conversations.total;
+            document.getElementById('conversationDetails').textContent = 
+                `本周新增: ${stats.conversations.recent}`;
+            
+            // 更新消息统计
+            document.getElementById('totalMessages').textContent = stats.messages.total;
+            document.getElementById('messageDetails').textContent = 
+                `用户: ${stats.messages.user_messages} | AI: ${stats.messages.assistant_messages}`;
+            
+            // 更新文件统计
+            document.getElementById('totalFiles').textContent = stats.files.total;
+            document.getElementById('fileDetails').textContent = 
+                `本周上传: ${stats.files.recent}`;
+            
+            // 更新Token统计
+            document.getElementById('totalTokens').textContent = stats.tokens.total_balance;
+            document.getElementById('tokenDetails').textContent = 
+                `已用: ${stats.tokens.used} | 可用: ${stats.tokens.available}`;
+            
+            // 更新任务统计
+            document.getElementById('totalTasks').textContent = stats.tasks.total;
+            document.getElementById('taskDetails').textContent = 
+                `已完成: ${stats.tasks.completed} | 待处理: ${stats.tasks.pending}`;
+            
+            // 渲染图表
+            renderUserChart(stats.users.daily_registrations);
+            renderMessageChart(stats.messages.daily_messages);
+            
+            // 渲染最近活动
+            renderRecentActivities(stats.recent_activities);
+        })
+        .catch(error => {
+            console.error('Error loading overview data:', error);
+            document.getElementById('totalUsers').textContent = '加载失败';
+            document.getElementById('totalConversations').textContent = '加载失败';
+            document.getElementById('totalMessages').textContent = '加载失败';
+            document.getElementById('totalFiles').textContent = '加载失败';
+            document.getElementById('totalTokens').textContent = '加载失败';
+            document.getElementById('totalTasks').textContent = '加载失败';
+        });
+}
+
+// 渲染用户注册趋势图表
+function renderUserChart(dailyData) {
+    const chartContainer = document.getElementById('userChart');
+    chartContainer.innerHTML = '';
+    
+    if (dailyData.length === 0) {
+        chartContainer.innerHTML = '<div class="chart-placeholder">暂无数据</div>';
+        return;
+    }
+    
+    const chart = document.createElement('div');
+    chart.className = 'simple-chart';
+    
+    const maxValue = Math.max(...dailyData.map(d => d.count));
+    const height = 150;
+    
+    dailyData.forEach(day => {
+        const barHeight = maxValue > 0 ? (day.count / maxValue) * height : 0;
+        const bar = document.createElement('div');
+        bar.className = 'chart-bar';
+        bar.style.height = `${barHeight}px`;
+        bar.style.width = `${100 / dailyData.length}%`;
+        bar.title = `${day.date}: ${day.count} 人`;
+        
+        const label = document.createElement('div');
+        label.className = 'chart-label';
+        label.textContent = day.date.slice(5); // 只显示月-日
+        
+        bar.appendChild(label);
+        chart.appendChild(bar);
+    });
+    
+    chartContainer.appendChild(chart);
+}
+
+// 渲染消息发送趋势图表
+function renderMessageChart(dailyData) {
+    const chartContainer = document.getElementById('messageChart');
+    chartContainer.innerHTML = '';
+    
+    if (dailyData.length === 0) {
+        chartContainer.innerHTML = '<div class="chart-placeholder">暂无数据</div>';
+        return;
+    }
+    
+    const chart = document.createElement('div');
+    chart.className = 'simple-chart';
+    
+    const maxValue = Math.max(...dailyData.map(d => d.count));
+    const height = 150;
+    
+    dailyData.forEach(day => {
+        const barHeight = maxValue > 0 ? (day.count / maxValue) * height : 0;
+        const bar = document.createElement('div');
+        bar.className = 'chart-bar';
+        bar.style.height = `${barHeight}px`;
+        bar.style.width = `${100 / dailyData.length}%`;
+        bar.title = `${day.date}: ${day.count} 条`;
+        
+        const label = document.createElement('div');
+        label.className = 'chart-label';
+        label.textContent = day.date.slice(5); // 只显示月-日
+        
+        bar.appendChild(label);
+        chart.appendChild(bar);
+    });
+    
+    chartContainer.appendChild(chart);
+}
+
+// 渲染最近活动
+function renderRecentActivities(activities) {
+    const container = document.getElementById('recentActivity');
+    container.innerHTML = '';
+    
+    if (activities.length === 0) {
+        container.innerHTML = '<div class="no-activity">暂无活动记录</div>';
+        return;
+    }
+    
+    activities.forEach(activity => {
+        const activityDiv = document.createElement('div');
+        activityDiv.className = 'activity-item';
+        
+        const time = new Date(activity.time).toLocaleString('zh-CN');
+        
+        let icon = 'fas fa-user';
+        if (activity.type === 'conversation') icon = 'fas fa-comments';
+        else if (activity.type === 'file') icon = 'fas fa-file-upload';
+        
+        activityDiv.innerHTML = `
+            <div class="activity-icon">
+                <i class="${icon}"></i>
+            </div>
+            <div class="activity-content">
+                <div class="activity-description">${activity.description}</div>
+                <div class="activity-time">${time}</div>
+            </div>
+        `;
+        
+        container.appendChild(activityDiv);
+    });
+}
+
+// 加载公告数据
+function loadAnnouncementsData() {
+    fetch('/api/admin/announcements')
+        .then(response => response.json())
+        .then(announcements => {
+            const container = document.getElementById('announcementsList');
+            container.innerHTML = '';
+            
+            if (announcements.length === 0) {
+                container.innerHTML = '<div class="no-data">暂无公告</div>';
+                return;
+            }
+            
+            announcements.forEach(announcement => {
+                const announcementDiv = document.createElement('div');
+                announcementDiv.className = 'announcement-item';
+                announcementDiv.innerHTML = `
+                    <div class="announcement-header">
+                        <h4>${announcement.title}</h4>
+                        <div class="announcement-meta">
+                            <span class="status ${announcement.is_active ? 'active' : 'inactive'}">
+                                ${announcement.is_active ? '活跃' : '不活跃'}
+                            </span>
+                            <span class="date">${new Date(announcement.created_at).toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <div class="announcement-content">
+                        ${announcement.content}
+                    </div>
+                    <div class="announcement-actions">
+                        <button class="btn btn-sm btn-secondary edit-announcement" data-id="${announcement.id}">
+                            <i class="fas fa-edit"></i> 编辑
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-announcement" data-id="${announcement.id}">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                `;
+                container.appendChild(announcementDiv);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading announcements:', error);
+            document.getElementById('announcementsList').innerHTML = '<div class="error">加载失败</div>';
+        });
+}
+
+// 公告编辑和删除事件
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('edit-announcement') || e.target.closest('.edit-announcement')) {
+        const announcementId = e.target.closest('.edit-announcement').dataset.id;
+        editAnnouncement(announcementId);
+    }
+    
+    if (e.target.classList.contains('delete-announcement') || e.target.closest('.delete-announcement')) {
+        const announcementId = e.target.closest('.delete-announcement').dataset.id;
+        deleteAnnouncement(announcementId);
+    }
+});
+
+let currentEditAnnouncementId = null;
+
+function editAnnouncement(announcementId) {
+    fetch('/api/admin/announcements')
+        .then(response => response.json())
+        .then(announcements => {
+            const announcement = announcements.find(a => a.id == announcementId);
+            if (announcement) {
+                document.getElementById('announcementTitle').value = announcement.title;
+                document.getElementById('announcementContent').value = announcement.content;
+                document.getElementById('announcementActive').checked = announcement.is_active;
+                
+                currentEditAnnouncementId = announcementId;
+                
+                // 修改模态框标题
+                document.querySelector('#announcementModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> 编辑公告';
+                document.getElementById('saveAnnouncement').textContent = '更新';
+                
+                openModal('announcementModal');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading announcement data:', error);
+            alert('加载公告数据失败');
+        });
+}
+
+function deleteAnnouncement(announcementId) {
+    if (!confirm('确定要删除这个公告吗？此操作不可恢复。')) {
+        return;
+    }
+    
+    fetch('/api/admin/announcements', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: announcementId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('公告删除成功！');
+            loadAnnouncementsData();
+        } else {
+            alert('删除失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('网络错误');
+        console.error('Error:', error);
+    });
+}
+
+// 修改保存公告按钮事件
+document.getElementById('saveAnnouncement').addEventListener('click', function() {
+    const title = document.getElementById('announcementTitle').value;
+    const content = document.getElementById('announcementContent').value;
+    const isActive = document.getElementById('announcementActive').checked;
+    
+    if (!title || !content) {
+        alert('请填写完整信息');
+        return;
+    }
+    
+    const method = currentEditAnnouncementId ? 'PUT' : 'POST';
+    const data = {
+        title: title,
+        content: content,
+        is_active: isActive
+    };
+    
+    if (currentEditAnnouncementId) {
+        data.id = currentEditAnnouncementId;
+    }
+    
+    fetch('/api/admin/announcements', {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(currentEditAnnouncementId ? '公告更新成功！' : '公告创建成功！');
+            closeModal('announcementModal');
+            loadAnnouncementsData();
+            
+            // 重置表单
+            document.getElementById('announcementTitle').value = '';
+            document.getElementById('announcementContent').value = '';
+            document.getElementById('announcementActive').checked = true;
+            currentEditAnnouncementId = null;
+            
+            // 恢复模态框标题
+            document.querySelector('#announcementModal .modal-header h3').innerHTML = '<i class="fas fa-plus"></i> 新建公告';
+            document.getElementById('saveAnnouncement').textContent = '保存';
+        } else {
+            alert('操作失败');
+        }
+    })
+    .catch(error => {
+        alert('网络错误');
+        console.error('Error:', error);
+    });
+});
+
+// 取消公告编辑
+document.getElementById('cancelAnnouncement').addEventListener('click', function() {
+    closeModal('announcementModal');
+    
+    // 重置表单
+    document.getElementById('announcementTitle').value = '';
+    document.getElementById('announcementContent').value = '';
+    document.getElementById('announcementActive').checked = true;
+    currentEditAnnouncementId = null;
+    
+    // 恢复模态框标题
+    document.querySelector('#announcementModal .modal-header h3').innerHTML = '<i class="fas fa-plus"></i> 新建公告';
+    document.getElementById('saveAnnouncement').textContent = '保存';
+});
+
+// 加载配置数据
+function loadConfigData() {
+    fetch('/api/admin/config')
+        .then(response => response.json())
+        .then(configs => {
+            configs.forEach(config => {
+                switch(config.key) {
+                    case 'openai_api_key':
+                        document.getElementById('openaiApiKey').value = config.value;
+                        break;
+                    case 'default_tokens':
+                        document.getElementById('defaultTokens').value = config.value;
+                        break;
+                    case 'max_file_size':
+                        document.getElementById('maxFileSize').value = config.value;
+                        break;
+                    case 'system_message':
+                        document.getElementById('systemMessage').value = config.value;
+                        break;
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading config:', error);
+        });
+}
+
+// 加载用户数据
+function loadUsersData() {
+    fetch('/api/admin/users')
+        .then(response => response.json())
+        .then(users => {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${user.tokens}</td>
+                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td>${user.last_login ? new Date(user.last_login).toLocaleString() : '从未登录'}</td>
+                    <td>
+                        <span class="status ${user.is_active !== false ? 'active' : 'inactive'}">
+                            ${user.is_active !== false ? '活跃' : '不活跃'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status ${user.is_admin ? 'admin' : 'user'}">
+                            ${user.is_admin ? '是' : '否'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary edit-user" data-id="${user.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-user" data-id="${user.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading users:', error);
+            document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="9" class="error">加载失败</td></tr>';
+        });
+}
+
+// 保存配置
+document.getElementById('saveConfig').addEventListener('click', function() {
+    const configs = [
+        { key: 'openai_api_key', value: document.getElementById('openaiApiKey').value },
+        { key: 'default_tokens', value: document.getElementById('defaultTokens').value },
+        { key: 'max_file_size', value: document.getElementById('maxFileSize').value },
+        { key: 'system_message', value: document.getElementById('systemMessage').value }
+    ];
+    
+    Promise.all(configs.map(config => 
+        fetch('/api/admin/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        })
+    )).then(() => {
+        alert('配置保存成功！');
+    }).catch(error => {
+        alert('配置保存失败');
+        console.error('Error saving config:', error);
+    });
+});
+
+// 新建公告
+document.getElementById('newAnnouncement').addEventListener('click', function() {
+    openModal('announcementModal');
+});
+
+// 用户编辑功能
+let currentEditUserId = null;
+
+// 编辑用户按钮事件
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('edit-user') || e.target.closest('.edit-user')) {
+        const userId = e.target.closest('.edit-user').dataset.id;
+        editUser(userId);
+    }
+    
+    if (e.target.classList.contains('delete-user') || e.target.closest('.delete-user')) {
+        const userId = e.target.closest('.delete-user').dataset.id;
+        deleteUser(userId);
+    }
+});
+
+function editUser(userId) {
+    // 获取用户数据
+    fetch(`/api/admin/users`)
+        .then(response => response.json())
+        .then(users => {
+            const user = users.find(u => u.id == userId);
+            if (user) {
+                // 填充编辑表单
+                document.getElementById('editUsername').value = user.username;
+                document.getElementById('editEmail').value = user.email;
+                document.getElementById('editTokens').value = user.tokens;
+                document.getElementById('editIsAdmin').checked = user.is_admin;
+                
+                currentEditUserId = userId;
+                openModal('userModal');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading user data:', error);
+            alert('加载用户数据失败');
+        });
+}
+
+// 保存用户编辑
+document.getElementById('saveUserEdit').addEventListener('click', function() {
+    if (!currentEditUserId) {
+        alert('请先选择要编辑的用户');
+        return;
+    }
+    
+    const email = document.getElementById('editEmail').value;
+    const tokens = parseInt(document.getElementById('editTokens').value);
+    const isAdmin = document.getElementById('editIsAdmin').checked;
+    
+    if (!email) {
+        alert('请填写邮箱地址');
+        return;
+    }
+    
+    if (tokens < 0) {
+        alert('Token余额不能为负数');
+        return;
+    }
+    
+    const updateData = {
+        email: email,
+        tokens: tokens,
+        is_admin: isAdmin
+    };
+    
+    fetch(`/api/admin/users/${currentEditUserId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('用户信息更新成功！');
+            closeModal('userModal');
+            loadUsersData(); // 重新加载用户列表
+        } else {
+            alert('更新失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('网络错误');
+        console.error('Error:', error);
+    });
+});
+
+// 取消用户编辑
+document.getElementById('cancelUserEdit').addEventListener('click', function() {
+    closeModal('userModal');
+    currentEditUserId = null;
+});
+
+function deleteUser(userId) {
+    if (!confirm('确定要删除这个用户吗？此操作不可恢复。')) {
+        return;
+    }
+    
+    fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('用户删除成功！');
+            loadUsersData(); // 重新加载用户列表
+        } else {
+            alert('删除失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('网络错误');
+        console.error('Error:', error);
+    });
+}
+
+// 加载价格数据
+function loadPricesData() {
+    fetch('/api/admin/prices')
+        .then(response => response.json())
+        .then(prices => {
+            const container = document.getElementById('pricesList');
+            container.innerHTML = '';
+
+            if (prices.length === 0) {
+                container.innerHTML = '<div class="no-data">暂无价格设置</div>';
+                return;
+            }
+
+            prices.forEach(price => {
+                const priceDiv = document.createElement('div');
+                priceDiv.className = 'price-item';
+                priceDiv.innerHTML = `
+                    <div class="price-header">
+                        <h4>${price.token_amount} Tokens</h4>
+                        <div class="price-meta">
+                            <span class="price-value">¥${price.price}</span>
+                            <span class="status ${price.is_active ? 'active' : 'inactive'}">
+                                ${price.is_active ? '启用' : '禁用'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="price-content">
+                        <p>${price.description || '无描述'}</p>
+                        <small>创建时间: ${new Date(price.created_at).toLocaleString()}</small>
+                    </div>
+                    <div class="price-actions">
+                        <button class="btn btn-sm btn-secondary edit-price" data-id="${price.id}">
+                            <i class="fas fa-edit"></i> 编辑
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-price" data-id="${price.id}">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                `;
+                container.appendChild(priceDiv);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading prices:', error);
+            document.getElementById('pricesList').innerHTML = '<div class="error">加载失败</div>';
+        });
+}
+
+// 价格编辑和删除事件
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('edit-price') || e.target.closest('.edit-price')) {
+        const priceId = e.target.closest('.edit-price').dataset.id;
+        editPrice(priceId);
+    }
+    
+    if (e.target.classList.contains('delete-price') || e.target.closest('.delete-price')) {
+        const priceId = e.target.closest('.delete-price').dataset.id;
+        deletePrice(priceId);
+    }
+});
+
+let currentEditPriceId = null;
+
+function editPrice(priceId) {
+    fetch('/api/admin/prices')
+        .then(response => response.json())
+        .then(prices => {
+            const price = prices.find(p => p.id == priceId);
+            if (price) {
+                document.getElementById('tokenAmount').value = price.token_amount;
+                document.getElementById('priceValue').value = price.price;
+                document.getElementById('priceDescription').value = price.description || '';
+                document.getElementById('priceActive').checked = price.is_active;
+                
+                currentEditPriceId = priceId;
+                
+                // 修改模态框标题
+                document.querySelector('#priceModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> 编辑价格';
+                document.getElementById('savePrice').textContent = '更新';
+                
+                openModal('priceModal');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading price data:', error);
+            alert('加载价格数据失败');
+        });
+}
+
+function deletePrice(priceId) {
+    if (!confirm('确定要删除这个价格方案吗？此操作不可恢复。')) {
+        return;
+    }
+    
+    fetch('/api/admin/prices', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: priceId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('价格方案删除成功！');
+            loadPricesData();
+        } else {
+            alert('删除失败: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('网络错误');
+        console.error('Error:', error);
+    });
+}
+
+// 修改保存价格按钮事件
+document.getElementById('savePrice').addEventListener('click', function() {
+    const tokenAmount = parseInt(document.getElementById('tokenAmount').value);
+    const priceValue = parseFloat(document.getElementById('priceValue').value);
+    const description = document.getElementById('priceDescription').value;
+    const isActive = document.getElementById('priceActive').checked;
+    
+    if (!tokenAmount || isNaN(priceValue)) {
+        alert('请填写Token数量和价格');
+        return;
+    }
+    
+    const method = currentEditPriceId ? 'PUT' : 'POST';
+    const data = {
+        token_amount: tokenAmount,
+        price: priceValue,
+        description: description,
+        is_active: isActive
+    };
+    
+    if (currentEditPriceId) {
+        data.id = currentEditPriceId;
+    }
+    
+    fetch('/api/admin/prices', {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(currentEditPriceId ? '价格方案更新成功！' : '价格方案创建成功！');
+            closeModal('priceModal');
+            loadPricesData();
+            
+            // 重置表单
+            document.getElementById('tokenAmount').value = '';
+            document.getElementById('priceValue').value = '';
+            document.getElementById('priceDescription').value = '';
+            document.getElementById('priceActive').checked = true;
+            currentEditPriceId = null;
+            
+            // 恢复模态框标题
+            document.querySelector('#priceModal .modal-header h3').innerHTML = '<i class="fas fa-plus"></i> 新增价格';
+            document.getElementById('savePrice').textContent = '保存';
+        } else {
+            alert('操作失败: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('网络错误');
+        console.error('Error:', error);
+    });
+});
+
+// 取消价格编辑
+document.getElementById('cancelPrice').addEventListener('click', function() {
+    closeModal('priceModal');
+    
+    // 重置表单
+    document.getElementById('tokenAmount').value = '';
+    document.getElementById('priceValue').value = '';
+    document.getElementById('priceDescription').value = '';
+    document.getElementById('priceActive').checked = true;
+    currentEditPriceId = null;
+    
+    // 恢复模态框标题
+    document.querySelector('#priceModal .modal-header h3').innerHTML = '<i class="fas fa-plus"></i> 新增价格';
+    document.getElementById('savePrice').textContent = '保存';
+});
+
+// 新建价格
+document.getElementById('newPrice').addEventListener('click', function() {
+    openModal('priceModal');
+});
+
+// 加载Token价格数据
+function loadTokenPricesData() {
+    fetch('/api/admin/token-price')
+        .then(response => response.json())
+        .then(priceData => {
+            const container = document.getElementById('tokenPriceDisplay');
+            container.innerHTML = '';
+
+            if (!priceData || !priceData.id) {
+                container.innerHTML = '<div class="no-data">暂无Token价格设置，请点击"设置Token价格"创建</div>';
+                return;
+            }
+
+            const pricePerToken = (priceData.price / priceData.token_amount).toFixed(4);
+            container.innerHTML = `
+                <div class="price-item">
+                    <div class="price-header">
+                        <h4>当前Token价格设置</h4>
+                        <div class="price-meta">
+                            <span class="price-value">¥${priceData.price}</span>
+                            <span class="status ${priceData.is_active ? 'active' : 'inactive'}">
+                                ${priceData.is_active ? '启用' : '禁用'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="price-content">
+                        <p><strong>${priceData.token_amount} Token = ¥${priceData.price}</strong></p>
+                        <p>单价: ¥${pricePerToken}/Token</p>
+                        <p>${priceData.description || '无描述'}</p>
+                        <small>更新时间: ${new Date(priceData.updated_at).toLocaleString()}</small>
+                    </div>
+                    <div class="price-actions">
+                        <button class="btn btn-sm btn-secondary edit-token-price" data-id="${priceData.id}">
+                            <i class="fas fa-edit"></i> 编辑
+                        </button>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error loading token price:', error);
+            document.getElementById('tokenPriceDisplay').innerHTML = '<div class="error">加载失败</div>';
+        });
+}
+
+// Token价格编辑事件
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('edit-token-price') || e.target.closest('.edit-token-price')) {
+        editTokenPrice();
+    }
+});
+
+function editTokenPrice() {
+    fetch('/api/admin/token-price')
+        .then(response => response.json())
+        .then(priceData => {
+            if (priceData && priceData.id) {
+                document.getElementById('tokenAmount').value = priceData.token_amount;
+                document.getElementById('priceValue').value = priceData.price;
+                document.getElementById('priceDescription').value = priceData.description || '';
+                document.getElementById('priceActive').checked = priceData.is_active;
+                
+                // 修改模态框标题
+                document.querySelector('#priceModal .modal-header h3').innerHTML = '<i class="fas fa-edit"></i> 编辑Token价格';
+                document.getElementById('savePrice').textContent = '更新';
+                
+                openModal('priceModal');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading token price data:', error);
+            alert('加载Token价格数据失败');
+        });
+}
+
+// 修改保存Token价格按钮事件
+document.getElementById('savePrice').addEventListener('click', function() {
+    const tokenAmount = parseInt(document.getElementById('tokenAmount').value);
+    const priceValue = parseFloat(document.getElementById('priceValue').value);
+    const description = document.getElementById('priceDescription').value;
+    const isActive = document.getElementById('priceActive').checked;
+    
+    if (!tokenAmount || isNaN(priceValue)) {
+        alert('请填写Token数量和价格');
+        return;
+    }
+    
+    if (tokenAmount <= 0) {
+        alert('Token数量必须大于0');
+        return;
+    }
+    
+    if (priceValue <= 0) {
+        alert('价格必须大于0');
+        return;
+    }
+    
+    const data = {
+        token_amount: tokenAmount,
+        price: priceValue,
+        description: description,
+        is_active: isActive
+    };
+    
+    // 检查是否已有价格设置，决定使用POST还是PUT
+    fetch('/api/admin/token-price')
+        .then(response => response.json())
+        .then(existingPrice => {
+            const method = existingPrice && existingPrice.id ? 'PUT' : 'POST';
+            
+            return fetch('/api/admin/token-price', {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Token价格设置成功！');
+                closeModal('priceModal');
+                loadTokenPricesData();
+                
+                // 重置表单
+                document.getElementById('tokenAmount').value = '';
+                document.getElementById('priceValue').value = '';
+                document.getElementById('priceDescription').value = '';
+                document.getElementById('priceActive').checked = true;
+                
+                // 恢复模态框标题
+                document.querySelector('#priceModal .modal-header h3').innerHTML = '<i class="fas fa-plus"></i> 设置Token价格';
+                document.getElementById('savePrice').textContent = '保存';
+            } else {
+                alert('操作失败: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('网络错误');
+            console.error('Error:', error);
+        });
+});
+
+// 取消Token价格编辑
+document.getElementById('cancelPrice').addEventListener('click', function() {
+    closeModal('priceModal');
+    
+    // 重置表单
+    document.getElementById('tokenAmount').value = '';
+    document.getElementById('priceValue').value = '';
+    document.getElementById('priceDescription').value = '';
+    document.getElementById('priceActive').checked = true;
+    
+    // 恢复模态框标题
+    document.querySelector('#priceModal .modal-header h3').innerHTML = '<i class="fas fa-plus"></i> 设置Token价格';
+    document.getElementById('savePrice').textContent = '保存';
+});
+
+// 新建Token价格
+document.getElementById('newTokenPrice').addEventListener('click', function() {
+    // 重置表单
+    document.getElementById('tokenAmount').value = '';
+    document.getElementById('priceValue').value = '';
+    document.getElementById('priceDescription').value = '';
+    document.getElementById('priceActive').checked = true;
+    
+    // 恢复模态框标题
+    document.querySelector('#priceModal .modal-header h3').innerHTML = '<i class="fas fa-plus"></i> 设置Token价格';
+    document.getElementById('savePrice').textContent = '保存';
+    
+    openModal('priceModal');
+});
+
+// 页面加载时加载概览数据
+window.addEventListener('load', function() {
+    loadOverviewData();
+});
+</script>
+{% endblock %} 

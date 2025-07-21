@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}注册 - GPT随心用{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h2>
+                <i class="fas fa-user-plus"></i>
+                用户注册
+            </h2>
+            <p>加入GPT随心用，开启智能对话之旅</p>
+        </div>
+        
+        <form class="auth-form" id="registerForm">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">邮箱</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">确认密码</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-full">
+                <i class="fas fa-user-plus"></i>
+                注册
+            </button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>已有账户？ <a href="{{ url_for('login') }}">立即登录</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (password !== confirmPassword) {
+        alert('两次输入的密码不一致');
+        return;
+    }
+    
+    const formData = {
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
+        password: password
+    };
+    
+    fetch('/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('注册成功！请登录');
+            window.location.href = '/login';
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('注册失败:', error);
+        alert('注册失败，请重试');
+    });
+});
+</script>
+{% endblock %} 

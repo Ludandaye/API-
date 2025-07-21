@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON分析功能演示</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .demo-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .json-input {
+            width: 100%;
+            height: 300px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .analysis-section {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        .analysis-section h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        pre {
+            white-space: pre-wrap;
+            font-family: inherit;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 JSON分析功能演示</h1>
+    
+    <div class="demo-section">
+        <h2>📝 输入JSON数据</h2>
+        <p>请在下面的文本框中输入要分析的JSON数据：</p>
+        <textarea id="jsonInput" class="json-input" placeholder="请输入JSON数据...">{
+  "users": [
+    {
+      "id": 1,
+      "name": "张三",
+      "email": "zhangsan@example.com",
+      "age": 25,
+      "department": "技术部",
+      "skills": ["Python", "JavaScript", "SQL"]
+    },
+    {
+      "id": 2,
+      "name": "李四",
+      "email": "lisi@example.com",
+      "age": 30,
+      "department": "产品部",
+      "skills": ["产品设计", "用户研究", "数据分析"]
+    }
+  ],
+  "departments": {
+    "技术部": {
+      "manager": "张三",
+      "employee_count": 1,
+      "budget": 500000
+    },
+    "产品部": {
+      "manager": "李四",
+      "employee_count": 1,
+      "budget": 300000
+    }
+  },
+  "company_info": {
+    "name": "智能科技有限公司",
+    "founded": "2020-01-01",
+    "industry": "互联网",
+    "location": "北京"
+  }
+}</textarea>
+        
+        <div>
+            <button class="btn btn-primary" onclick="analyzeJson()">🔍 开始分析</button>
+            <button class="btn btn-secondary" onclick="loadSampleData()">📋 加载示例数据</button>
+            <button class="btn btn-secondary" onclick="clearInput()">🗑️ 清空输入</button>
+        </div>
+    </div>
+    
+    <div id="resultContainer" class="demo-section" style="display: none;">
+        <h2>📊 分析结果</h2>
+        <div id="resultContent"></div>
+    </div>
+
+    <script>
+        const baseUrl = 'http://localhost:5002';
+        
+        function analyzeJson() {
+            const jsonInput = document.getElementById('jsonInput').value.trim();
+            const resultContainer = document.getElementById('resultContainer');
+            const resultContent = document.getElementById('resultContent');
+            
+            if (!jsonInput) {
+                alert('请输入JSON数据');
+                return;
+            }
+            
+            // 验证JSON格式
+            try {
+                JSON.parse(jsonInput);
+            } catch (e) {
+                alert('请输入有效的JSON格式数据');
+                return;
+            }
+            
+            // 显示加载状态
+            resultContainer.style.display = 'block';
+            resultContent.innerHTML = '<div class="loading">🔄 正在分析JSON数据，请稍候...</div>';
+            
+            // 发送分析请求
+            fetch(`${baseUrl}/api/batch`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    type: 'json_processing',
+                    data: jsonInput,
+                    name: 'JSON数据分析'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAnalysisResult(data.result);
+                } else {
+                    showError(data.error || data.message || '分析失败');
+                }
+            })
+            .catch(error => {
+                console.error('分析错误:', error);
+                showError('网络错误，请重试');
+            });
+        }
+        
+        function showAnalysisResult(result) {
+            const resultContent = document.getElementById('resultContent');
+            
+            const resultHtml = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4>📊 分析结果</h4>
+                    <button onclick="downloadAnalysisResult()" class="btn btn-primary" style="margin: 0;">
+                        <i class="fas fa-download"></i> 下载结果
+                    </button>
+                </div>
+                
+                <div class="analysis-section">
+                    <h4>🤖 AI智能分析</h4>
+                    <pre>${result.analysis || '暂无分析结果'}</pre>
+                </div>
+                
+                <div class="analysis-section">
+                    <h4>📈 数据摘要</h4>
+                    <ul>
+                        <li><strong>总项目数:</strong> ${result.summary?.total_items || 0}</li>
+                        <li><strong>最大深度:</strong> ${result.summary?.max_depth || 0}</li>
+                        <li><strong>估计大小:</strong> ${((result.summary?.estimated_size || 0) / 1024).toFixed(2)} KB</li>
+                        <li><strong>数据类型:</strong> ${Object.keys(result.summary?.data_types || {}).join(', ') || '无'}</li>
+                    </ul>
+                </div>
+                
+                <div class="analysis-section">
+                    <h4>🏗️ 数据结构</h4>
+                    <pre>${JSON.stringify(result.data_structure || {}, null, 2)}</pre>
+                </div>
+                
+                <div class="analysis-section">
+                    <h4>📋 原始数据</h4>
+                    <pre>${JSON.stringify(result.input_data || {}, null, 2)}</pre>
+                </div>
+            `;
+            
+            resultContent.innerHTML = resultHtml;
+        }
+        
+        function downloadAnalysisResult() {
+            const resultContent = document.getElementById('resultContent');
+            const analysis = resultContent.querySelector('.analysis-section:nth-child(2) pre').textContent;
+            const summary = resultContent.querySelector('.analysis-section:nth-child(3) ul').innerHTML;
+            const structure = resultContent.querySelector('.analysis-section:nth-child(4) pre').textContent;
+            const inputData = resultContent.querySelector('.analysis-section:nth-child(5) pre').textContent;
+            
+            // 创建下载内容
+            const downloadContent = {
+                timestamp: new Date().toISOString(),
+                analysis: analysis,
+                summary: summary,
+                dataStructure: structure,
+                inputData: inputData
+            };
+            
+            // 创建Blob并下载
+            const blob = new Blob([JSON.stringify(downloadContent, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `json_analysis_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // 显示下载成功提示
+            const downloadBtn = document.querySelector('button[onclick="downloadAnalysisResult()"]');
+            if (downloadBtn) {
+                const originalText = downloadBtn.innerHTML;
+                downloadBtn.innerHTML = '<i class="fas fa-check"></i> 已下载';
+                downloadBtn.style.backgroundColor = '#28a745';
+                setTimeout(() => {
+                    downloadBtn.innerHTML = originalText;
+                    downloadBtn.style.backgroundColor = '';
+                }, 2000);
+            }
+        }
+        
+        function showError(message) {
+            const resultContent = document.getElementById('resultContent');
+            resultContent.innerHTML = `<div class="result error">❌ ${message}</div>`;
+        }
+        
+        function loadSampleData() {
+            const sampleData = {
+                "products": [
+                    {
+                        "id": "P001",
+                        "name": "智能手机",
+                        "category": "电子产品",
+                        "price": 2999,
+                        "stock": 50,
+                        "specs": {
+                            "screen": "6.1英寸",
+                            "battery": "4000mAh",
+                            "camera": "48MP"
+                        },
+                        "tags": ["新品", "热销", "推荐"]
+                    },
+                    {
+                        "id": "P002",
+                        "name": "无线耳机",
+                        "category": "音频设备",
+                        "price": 299,
+                        "stock": 100,
+                        "specs": {
+                            "type": "入耳式",
+                            "battery": "6小时",
+                            "connection": "蓝牙5.0"
+                        },
+                        "tags": ["性价比", "便携"]
+                    }
+                ],
+                "sales": {
+                    "total_revenue": 150000,
+                    "monthly_growth": 15.5,
+                    "top_seller": "智能手机"
+                },
+                "inventory": {
+                    "total_items": 150,
+                    "low_stock": 5,
+                    "categories": ["电子产品", "音频设备", "配件"]
+                }
+            };
+            
+            document.getElementById('jsonInput').value = JSON.stringify(sampleData, null, 2);
+        }
+        
+        function clearInput() {
+            document.getElementById('jsonInput').value = '';
+            document.getElementById('resultContainer').style.display = 'none';
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('JSON分析演示页面加载完成');
+        });
+    </script>
+</body>
+</html> 

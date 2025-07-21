@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>登录调试</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-group { margin: 10px 0; }
+        input { padding: 8px; width: 200px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>登录调试页面</h1>
+    
+    <div class="form-group">
+        <label>用户名:</label>
+        <input type="text" id="username" value="admin">
+    </div>
+    
+    <div class="form-group">
+        <label>密码:</label>
+        <input type="password" id="password" value="admin123">
+    </div>
+    
+    <button onclick="testLogin()">测试登录</button>
+    <button onclick="testAPI()">测试API</button>
+    
+    <div id="result" class="result"></div>
+
+    <script>
+    function testLogin() {
+        const formData = {
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        };
+        
+        console.log('发送登录请求:', formData);
+        
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            console.log('响应状态:', response.status);
+            console.log('响应头:', response.headers);
+            return response.json();
+        })
+        .then(data => {
+            console.log('响应数据:', data);
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            resultDiv.className = data.success ? 'result success' : 'result error';
+        })
+        .catch(error => {
+            console.error('错误:', error);
+            document.getElementById('result').innerHTML = '错误: ' + error.message;
+            document.getElementById('result').className = 'result error';
+        });
+    }
+    
+    function testAPI() {
+        fetch('/api/announcements')
+        .then(response => response.json())
+        .then(data => {
+            console.log('API测试结果:', data);
+            document.getElementById('result').innerHTML = 'API测试成功，公告数量: ' + data.length;
+            document.getElementById('result').className = 'result success';
+        })
+        .catch(error => {
+            console.error('API错误:', error);
+            document.getElementById('result').innerHTML = 'API错误: ' + error.message;
+            document.getElementById('result').className = 'result error';
+        });
+    }
+    </script>
+</body>
+</html> 
