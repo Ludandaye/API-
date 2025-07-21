@@ -26,7 +26,7 @@
 
 ### 1. 克隆项目
 ```bash
-git clone https://github.com/您的用户名/gpt-system.git
+git clone https://github.com/Ludandaye/gpt-system.git
 cd gpt-system
 ```
 
@@ -157,8 +157,8 @@ gpt-system/
 
 ## 联系方式
 
-- 项目链接: https://github.com/您的用户名/gpt-system
-- 问题反馈: https://github.com/您的用户名/gpt-system/issues
+- 项目链接: https://github.com/Ludandaye/gpt-system
+- 问题反馈: https://github.com/Ludandaye/gpt-system/issues
 
 ## 更新日志
 
